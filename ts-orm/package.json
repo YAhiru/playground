@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "test": "node --import tsx --test ./**/*.test.ts",
+    "test": "node --import tsx --test-concurrency=1 --test ./**/*.test.ts",
     "test:w": "nodemon --watch './**/*.ts' --exec \"node --import tsx --test ./**/*.test.ts\"",
     "fmt": "biome format --write src/*",
     "gen": "npm run gen:kysely",
