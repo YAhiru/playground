@@ -13,7 +13,7 @@ $ npm run fmt
 ```
 
 ## libs
-### (TODO)Prisma
+### Prisma
 https://www.prisma.io/docs/getting-started
 
 ### (TODO)Mikro

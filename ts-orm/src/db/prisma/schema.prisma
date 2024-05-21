@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model messages {
+  id      Int    @id @default(autoincrement()) @db.UnsignedInt
+  user_id Int    @db.UnsignedInt
+  room_id Int    @db.UnsignedInt
+  message String @db.VarChar(255)
+  users   users  @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messages_ibfk_1")
+  rooms   rooms  @relation(fields: [room_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messages_ibfk_2")
+
+  @@index([room_id], map: "room_id")
+  @@index([user_id], map: "user_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model rooms {
+  id        Int        @id @default(autoincrement()) @db.UnsignedInt
+  user_id   Int        @db.UnsignedInt
+  room_name String     @db.VarChar(50)
+  messages  messages[]
+  users     users      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "rooms_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model users {
+  id       Int        @id @default(autoincrement()) @db.UnsignedInt
+  name     String     @db.VarChar(255)
+  messages messages[]
+  rooms    rooms[]
+}
