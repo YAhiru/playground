@@ -7,7 +7,7 @@
     "test:w": "nodemon --watch './**/*.ts' --exec \"node --import tsx --test ./**/*.test.ts\"",
     "fmt": "biome format --write src/*",
     "gen": "npm run gen:kysely && npm run gen:prisma && npm run fmt",
-    "gen:kysely": "kysely-codegen --url mysql://root:root@localhost/playground --out-file src/db/kysely/schema.d.ts",
+    "gen:kysely": "kysely-codegen --out-file src/db/kysely/schema.d.ts",
     "gen:prisma": "prisma db pull --schema=./src/db/prisma/schema.prisma && prisma generate --schema=./src/db/prisma/schema.prisma"
   },
   "keywords": [],
