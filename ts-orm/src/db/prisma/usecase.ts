@@ -99,11 +99,12 @@ export const cursorRoomMessages: (
     });
 
     return {
-      next: messages.length < perPage ?  null : messages[messages.length - 1].id,
+      next: messages.length < perPage ? null : messages[messages.length - 1].id,
       items: messages.map((m) => ({
-      message: m.message,
-      user: m.users,
-    }))};
+        message: m.message,
+        user: m.users,
+      })),
+    };
   };
 
 export const sendMessage: (db: PrismaClient) => UseCases["sendMessage"] =
