@@ -8,12 +8,15 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
+	github.com/fatih/color v1.17.0 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/lithammer/shortuuid/v4 v4.0.0 // indirect
 	github.com/lmittmann/tint v1.0.3 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/orcaman/concurrent-map v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.17.0 // indirect
