@@ -1,0 +1,6 @@
+[package]
+name        = "flix-json-parser"
+description = "test"
+version     = "0.1.0"
+flix        = "0.48.0"
+authors     = ["y_ahiru <yahiru1121@gmail.com>"]
