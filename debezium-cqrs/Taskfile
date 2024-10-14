@@ -1,0 +1,31 @@
+#!/bin/bash
+# https://github.com/adriancooney/Taskfile#install
+
+function list-topics {
+    docker compose exec kafka kafka-topics.sh --list --bootstrap-server kafka:9092
+}
+
+function list-groups {
+    docker compose exec kafka kafka-consumer-groups.sh --list --bootstrap-server kafka:9092
+}
+
+function tail-topic {
+    docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic $1 --from-beginning
+}
+
+function register-mysql-connector {
+    curl -i -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://localhost:8083/connectors/ -d @./docker/debezium/mysql.json
+}
+
+function default {
+    help
+}
+
+function help {
+    echo "$0 <task> <args>"
+    echo "Tasks:"
+    compgen -A function | cat -n
+}
+
+TIMEFORMAT="Task completed in %3lR"
+time ${@:-default}
