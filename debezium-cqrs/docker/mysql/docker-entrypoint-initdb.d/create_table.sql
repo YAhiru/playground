@@ -1,6 +1,7 @@
 CREATE TABLE `orders` (
     `id` VARCHAR(255) NOT NULL,
     `price` INT NOT NULL,
+    `ordered_at` TIMESTAMP NOT NULL,
     PRIMARY KEY (`id`)
 );
 

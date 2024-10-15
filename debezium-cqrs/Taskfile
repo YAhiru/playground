@@ -9,6 +9,10 @@ function list-groups {
     docker compose exec kafka kafka-consumer-groups.sh --list --bootstrap-server kafka:9092
 }
 
+function describe-group {
+    docker compose exec kafka kafka-consumer-groups.sh --bootstrap-server kafka:9092 --describe --group $1
+}
+
 function tail-topic {
     docker-compose exec kafka kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic $1 --from-beginning
 }

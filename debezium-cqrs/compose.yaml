@@ -37,3 +37,24 @@ services:
     links:
       - kafka
       - mysql
+
+  nestjs:
+    image: "node:20-slim"
+    ports:
+      - "3000:3000"
+    links:
+      - mysql
+    command: ["npm", "run", "start:dev"]
+    volumes:
+      - ./:/app
+    working_dir: /app
+
+  read-model-updater:
+    image: "node:20-slim"
+    links:
+      - kafka
+      - mysql
+    command: ["npx", "ts-node", "src/console/read-model-updater.ts"]
+    volumes:
+      - ./:/app
+    working_dir: /app

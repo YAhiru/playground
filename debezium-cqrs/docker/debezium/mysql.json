@@ -2,6 +2,7 @@
   "name": "debezium-mysql-connector",
   "config": {
     "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+    "topic.prefix": "debezium",
     "tasks.max": "1",
     "database.hostname": "mysql",
     "database.port": "3306",
