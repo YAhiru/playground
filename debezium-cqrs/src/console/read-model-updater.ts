@@ -1,6 +1,6 @@
 import { db } from '../database';
 import { ConsumerSubscribeTopics, Kafka, EachMessagePayload } from 'kafkajs';
-import { DebeziumEvent, OrderCreatedEvent, OrderCreatedEventName, OrderUpdatedEventName } from '../order.event';
+import { DebeziumEvent, OrderCreatedEvent, OrderEvent } from '../order.event';
 
 async function handleOrderCreatedEvent(event: OrderCreatedEvent) {
   await db
@@ -45,10 +45,10 @@ async function consumeEvent(event: DebeziumEvent) {
   }
 
   switch (event.type) {
-    case OrderCreatedEventName:
+    case OrderEvent.created:
       await handleOrderCreatedEvent(JSON.parse(event.payload));
       break;
-    case OrderUpdatedEventName:
+    case OrderEvent.updated:
       await handleOrderUpdatedEvent(JSON.parse(event.payload));
       break;
     default:

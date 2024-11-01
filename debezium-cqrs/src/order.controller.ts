@@ -9,9 +9,9 @@ import {
 } from '@nestjs/common';
 import { v7 } from 'uuid';
 import { db } from './database';
-import { IsInt, IsNumberString, Max, Min } from 'class-validator';
-import { OrderCreatedEvent, OrderCreatedEventName, OrderUpdatedEvent, OrderUpdatedEventName } from './order.event';
-import { Transform, Type } from 'class-transformer';
+import { IsInt, Max, Min } from 'class-validator';
+import { OrderCreatedEvent, OrderEvent, OrderUpdatedEvent } from './order.event';
+import { Type } from 'class-transformer';
 
 class UpdateOrderRequest {
   @Type(() => Number)
@@ -56,7 +56,7 @@ export class OrderController {
       .insertInto('order_events')
       .values({
         order_id: id,
-        type: OrderCreatedEventName,
+        type: OrderEvent.created,
         payload: JSON.stringify(event),
       })
       .execute();
@@ -90,14 +90,14 @@ export class OrderController {
     }>(
       (acc, event) => {
         const payload = event.payload;
-        if (event.type === OrderCreatedEventName) {
+        if (event.type === OrderEvent.created) {
           return {
             id: payload.order_id,
             price: payload.price,
             ordered_at: new Date(),
           };
         }
-        if (event.type === OrderUpdatedEventName) {
+        if (event.type === OrderEvent.updated) {
           return {
             ...acc,
             price: payload.price,
@@ -119,7 +119,7 @@ export class OrderController {
 
     await db.insertInto('order_events').values({
       order_id: order.id,
-      type: OrderUpdatedEventName,
+      type: OrderEvent.updated,
       payload: JSON.stringify(event),
     }).execute();
   }
