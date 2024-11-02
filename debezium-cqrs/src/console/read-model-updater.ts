@@ -1,6 +1,7 @@
-import { db } from '../database';
+import { db, EventTable } from '../database';
 import { ConsumerSubscribeTopics, Kafka, EachMessagePayload } from 'kafkajs';
-import { DebeziumEvent, OrderCreatedEvent, OrderEvent } from '../order.event';
+import { OrderCreatedEvent, OrderEvent } from '../order.event';
+import { Selectable } from 'kysely';
 
 async function handleOrderCreatedEvent(event: OrderCreatedEvent) {
   await db
@@ -23,28 +24,19 @@ async function handleOrderUpdatedEvent(event: OrderCreatedEvent) {
     .execute();
 }
 
-async function consumeEvent(event: DebeziumEvent) {
-  // そのイベントが処理済みでない場合、かつそのイベント以前のイベントが処理済みの場合にのみ処理を行う
-  const unconsumedEvent = await db
-    .selectFrom('order_events as oe')
-    .leftJoin('consumed_order_events as coe', 'oe.id', 'coe.id')
-    .select(['oe.id'])
-    .where('oe.order_id', '=', event.order_id) // 対象の注文に関連するイベント絞り込む
-    .where('oe.id', '>=', event.id) // 今回のイベントとそれ以前のイベントに絞り込む
-    .where('coe.id', 'is', null) // 処理済みのイベントを除外する
-    .limit(2)
-    .execute();
-  if (unconsumedEvent.length !== 1) {
-    // 処理済みではないイベントが1件もない場合は既に処理済みのイベントということなのでスキップ
-    // 処理済みではないイベントが複数ある場合は、今回のイベントよりも前のイベントが未処理であることになるのでスキップ
-    return;
-  }
-  if (unconsumedEvent[0].id !== event.id) {
-    // 処理済みではないイベントが1件あるが、そのイベントが今回のイベントではない場合はスキップ
+async function consumeEvent(event: Selectable<EventTable>) {
+  const consumedEvent = await db
+    .selectFrom('consumed_events as ce')
+    .select(['ce.id'])
+    .where('ce.id', '=', event.id)
+    .limit(1)
+    .executeTakeFirst();
+  // そのイベントが処理済みの場合はスキップする
+  if (consumedEvent !== undefined) {
     return;
   }
 
-  switch (event.type) {
+  switch (event.event_name) {
     case OrderEvent.created:
       await handleOrderCreatedEvent(JSON.parse(event.payload));
       break;
@@ -52,12 +44,12 @@ async function consumeEvent(event: DebeziumEvent) {
       await handleOrderUpdatedEvent(JSON.parse(event.payload));
       break;
     default:
-      console.log(`Unknown event type: ${event.type}`);
+      console.log(`Unknown event type: ${event.event_name}`);
       break;
   }
 
   await db
-    .insertInto('consumed_order_events')
+    .insertInto('consumed_events')
     .values({
       id: event.id,
     })
@@ -72,7 +64,7 @@ async function consumeEvent(event: DebeziumEvent) {
   const consumer = kafka.consumer({ groupId: 'order' });
 
   const topic: ConsumerSubscribeTopics = {
-    topics: ['debezium.debezium.order_events'],
+    topics: ['debezium.debezium.events'],
     fromBeginning: true,
   };
   await consumer.connect();

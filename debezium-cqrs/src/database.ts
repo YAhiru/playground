@@ -3,16 +3,17 @@ import { createPool } from 'mysql2';
 import { Kysely, MysqlDialect } from 'kysely';
 
 export interface Database {
-  order_events: OrderEventTable;
+  events: EventTable;
   orders: OrderTable;
-  consumed_order_events: ConsumedOrderEvent;
+  consumed_events: ConsumedEvent;
 }
 
-export interface OrderEventTable {
+export interface EventTable {
   id: Generated<number>;
-  order_id: string;
-  type: string;
+  aggregate_id: string;
+  event_name: string;
   payload: JSONColumnType<any>;
+  sequence_number: number;
   created_at: ColumnType<Date, string | undefined, never>;
 }
 
@@ -22,14 +23,14 @@ export interface OrderTable {
   ordered_at: ColumnType<Date, string | Date, never>;
 }
 
-export interface ConsumedOrderEvent {
+export interface ConsumedEvent {
   id: number;
 }
 
 const dialect = new MysqlDialect({
   pool: createPool({
     database: 'debezium',
-    host: 'mysql',
+    host: process.env.DATABASE_HOST ?? 'mysql',
     user: 'root',
     password: 'password',
     port: 3306,

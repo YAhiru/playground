@@ -13,10 +13,3 @@ export type OrderUpdatedEvent = {
   order_id: string;
   price: number;
 };
-
-export type DebeziumEvent = {
-  id: number;
-  order_id: string;
-  type: string;
-  payload: any;
-};

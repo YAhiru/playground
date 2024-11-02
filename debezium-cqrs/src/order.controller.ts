@@ -10,8 +10,13 @@ import {
 import { v7 } from 'uuid';
 import { db } from './database';
 import { IsInt, Max, Min } from 'class-validator';
-import { OrderCreatedEvent, OrderEvent, OrderUpdatedEvent } from './order.event';
+import {
+  OrderCreatedEvent,
+  OrderEvent,
+  OrderUpdatedEvent,
+} from './order.event';
 import { Type } from 'class-transformer';
+import { MySqlEventStore } from './event-store/mysql-event-store';
 
 class UpdateOrderRequest {
   @Type(() => Number)
@@ -23,6 +28,8 @@ class UpdateOrderRequest {
 
 @Controller()
 export class OrderController {
+  private eventStore = new MySqlEventStore();
+
   constructor() {}
 
   @Get('/orders/:id')
@@ -52,14 +59,12 @@ export class OrderController {
       ordered_at: orderedAt.toISOString(),
     };
 
-    await db
-      .insertInto('order_events')
-      .values({
-        order_id: id,
-        type: OrderEvent.created,
-        payload: JSON.stringify(event),
-      })
-      .execute();
+    await this.eventStore.persist({
+      name: OrderEvent.created,
+      aggregateId: id,
+      payload: event,
+      sequenceNumber: 1,
+    });
 
     return {
       id,
@@ -73,12 +78,7 @@ export class OrderController {
     @Param() params: { id: string },
     @Body() body: UpdateOrderRequest,
   ) {
-    const events = await db
-      .selectFrom('order_events')
-      .selectAll()
-      .where('order_id', '=', params.id)
-      .orderBy('created_at', 'asc')
-      .execute();
+    const events = await this.eventStore.retrieveFrom(params.id, 1);
     if (events.length === 0) {
       throw new NotFoundException('Order not found');
     }
@@ -90,14 +90,14 @@ export class OrderController {
     }>(
       (acc, event) => {
         const payload = event.payload;
-        if (event.type === OrderEvent.created) {
+        if (event.name === OrderEvent.created) {
           return {
             id: payload.order_id,
             price: payload.price,
             ordered_at: new Date(),
           };
         }
-        if (event.type === OrderEvent.updated) {
+        if (event.name === OrderEvent.updated) {
           return {
             ...acc,
             price: payload.price,
@@ -117,10 +117,11 @@ export class OrderController {
       price: body.price,
     };
 
-    await db.insertInto('order_events').values({
-      order_id: order.id,
-      type: OrderEvent.updated,
-      payload: JSON.stringify(event),
-    }).execute();
+    await this.eventStore.persist({
+      name: OrderEvent.updated,
+      payload: event,
+      aggregateId: order.id,
+      sequenceNumber: Math.max(...events.map((e) => e.sequenceNumber)) + 1,
+    });
   }
 }
