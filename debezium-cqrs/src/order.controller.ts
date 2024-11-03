@@ -11,12 +11,15 @@ import { v7 } from 'uuid';
 import { db } from './database';
 import { IsInt, Max, Min } from 'class-validator';
 import {
+  fromSnapshot,
   OrderCreatedEvent,
   OrderEvent,
   OrderUpdatedEvent,
-} from './order.event';
+  toSnapshot,
+} from './order.command';
 import { Type } from 'class-transformer';
 import { MySqlEventStore } from './event-store/mysql-event-store';
+import { nextSequenceNumber, SnapshotNotFoundError } from './event-store';
 
 class UpdateOrderRequest {
   @Type(() => Number)
@@ -49,28 +52,29 @@ export class OrderController {
   @Post('/orders/')
   @HttpCode(201)
   async random() {
-    const price = Math.floor(Math.random() * 10000);
-    const id = v7();
-    const orderedAt = new Date();
+    const order = {
+      id: v7(),
+      price: Math.floor(Math.random() * 10000),
+      ordered_at: new Date(),
+    };
 
     const event: OrderCreatedEvent = {
-      order_id: id,
-      price,
-      ordered_at: orderedAt.toISOString(),
+      order_id: order.id,
+      price: order.price,
+      ordered_at: order.ordered_at.toISOString(),
     };
 
-    await this.eventStore.persist({
-      name: OrderEvent.created,
-      aggregateId: id,
-      payload: event,
-      sequenceNumber: 1,
-    });
+    await this.eventStore.persistWithSnapshot(
+      {
+        name: OrderEvent.created,
+        aggregateId: order.id,
+        payload: event,
+        sequenceNumber: 1,
+      },
+      toSnapshot(order),
+    );
 
-    return {
-      id,
-      price,
-      ordered_at: orderedAt,
-    };
+    return order;
   }
 
   @Post('/orders/:id/update')
@@ -78,50 +82,29 @@ export class OrderController {
     @Param() params: { id: string },
     @Body() body: UpdateOrderRequest,
   ) {
-    const events = await this.eventStore.retrieveFrom(params.id, 1);
-    if (events.length === 0) {
-      throw new NotFoundException('Order not found');
+    try {
+      const { events, snapshot } = await this.eventStore.retrieveWithSnapshot(
+        params.id,
+      );
+      const order = fromSnapshot(snapshot);
+
+      const event: OrderUpdatedEvent = {
+        order_id: order.id,
+        price: body.price,
+      };
+
+      await this.eventStore.persist({
+        name: OrderEvent.updated,
+        payload: event,
+        aggregateId: order.id,
+        sequenceNumber: nextSequenceNumber(events, snapshot),
+      });
+    } catch (e) {
+      if (e instanceof SnapshotNotFoundError) {
+        throw new NotFoundException('Order does not found');
+      } else {
+        throw e;
+      }
     }
-
-    const order = events.reduce<{
-      id: string;
-      price: number;
-      ordered_at: Date;
-    }>(
-      (acc, event) => {
-        const payload = event.payload;
-        if (event.name === OrderEvent.created) {
-          return {
-            id: payload.order_id,
-            price: payload.price,
-            ordered_at: new Date(),
-          };
-        }
-        if (event.name === OrderEvent.updated) {
-          return {
-            ...acc,
-            price: payload.price,
-          };
-        }
-        return order;
-      },
-      {
-        id: params.id,
-        price: 0,
-        ordered_at: new Date(),
-      },
-    );
-
-    const event: OrderUpdatedEvent = {
-      order_id: order.id,
-      price: body.price,
-    };
-
-    await this.eventStore.persist({
-      name: OrderEvent.updated,
-      payload: event,
-      aggregateId: order.id,
-      sequenceNumber: Math.max(...events.map((e) => e.sequenceNumber)) + 1,
-    });
   }
 }

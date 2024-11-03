@@ -101,7 +101,7 @@ describe('MySqlEventStore', () => {
     );
 
     const { snapshot } = await eventStore.retrieveWithSnapshot('1');
-    expect(snapshot).toEqual({ foo: 'bar' });
+    expect(snapshot).toEqual({ sequenceNumber: 1, value: { foo: 'bar' } });
   });
 
   it('snapshotより後のイベントのみ取得されること', async () => {
@@ -122,7 +122,7 @@ describe('MySqlEventStore', () => {
     });
 
     const { events, snapshot } = await eventStore.retrieveWithSnapshot('1');
-    expect(snapshot).toEqual({ foo: 'bar' });
+    expect(snapshot).toEqual({ sequenceNumber: 1, value: { foo: 'bar' } });
     expect(events).toEqual([
       {
         aggregateId: '1',

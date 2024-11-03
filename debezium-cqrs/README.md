@@ -26,12 +26,6 @@ $ npm run start:prod
 ## Run tests
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+$ docker compose up -d --profile test
+$ DATABASE_HOST=localhost DATABASE_PORT=13306 npm run test
 ```

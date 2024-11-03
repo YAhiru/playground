@@ -1,5 +1,5 @@
 import { db } from '../database';
-import { Event, EventStore } from './event-store';
+import { Event, EventStore, Snapshot } from './event-store';
 
 export class MySqlEventStore implements EventStore {
   async retrieveFrom(
@@ -23,8 +23,8 @@ export class MySqlEventStore implements EventStore {
 
   async retrieveWithSnapshot(
     aggregateId: string,
-  ): Promise<{ events: Event[]; snapshot: Record<string, any> }> {
-    let snapshot: Record<string, any>;
+  ): Promise<{ events: Event[]; snapshot: Snapshot }> {
+    let snapshot: Snapshot;
     let events: Event[];
 
     await db.transaction().execute(async (trx) => {
@@ -42,7 +42,10 @@ export class MySqlEventStore implements EventStore {
         );
       }
 
-      snapshot = snapshotRecord.payload;
+      snapshot = {
+        sequenceNumber: snapshotRecord.sequence_number,
+        value: snapshotRecord.payload,
+      };
 
       const eventRecords = await db
         .selectFrom('events')

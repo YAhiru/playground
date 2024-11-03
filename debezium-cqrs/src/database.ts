@@ -41,7 +41,7 @@ const dialect = new MysqlDialect({
     host: process.env.DATABASE_HOST ?? 'mysql',
     user: 'root',
     password: 'password',
-    port: 3306,
+    port: process.env.DATABASE_PORT ? Number(process.env.DATABASE_PORT) : 3306,
     connectionLimit: 10,
   }),
 });

@@ -1,6 +1,6 @@
 import { db, EventTable } from '../database';
 import { ConsumerSubscribeTopics, Kafka, EachMessagePayload } from 'kafkajs';
-import { OrderCreatedEvent, OrderEvent } from '../order.event';
+import { OrderCreatedEvent, OrderEvent } from '../order.command';
 import { Selectable } from 'kysely';
 
 async function handleOrderCreatedEvent(event: OrderCreatedEvent) {
