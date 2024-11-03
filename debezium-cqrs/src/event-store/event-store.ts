@@ -4,7 +4,20 @@ export type EventStore = {
    */
   retrieveFrom(aggregateId: string, sequenceNumber: number): Promise<Event[]>;
 
+  /**
+   * @param aggregateId イベントを取得する対象のAggregateのID
+   * @return 指定された集約のスナップショットと、スナップショットより後に保存されたイベントを取得する
+   */
+  retrieveWithSnapshot(
+    aggregateId: string,
+  ): Promise<{ events: Event[]; snapshot: Record<string, any> }>;
+
   persist(event: Event): Promise<void>;
+
+  persistWithSnapshot(
+    event: Event,
+    snapshot: Record<string, any>,
+  ): Promise<void>;
 };
 
 export type Event = {

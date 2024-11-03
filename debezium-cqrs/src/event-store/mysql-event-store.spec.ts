@@ -9,6 +9,7 @@ describe('MySqlEventStore', () => {
 
   afterEach(async () => {
     await db.deleteFrom('events').execute();
+    await db.deleteFrom('snapshots').execute();
   });
 
   afterAll(async () => {
@@ -84,6 +85,50 @@ describe('MySqlEventStore', () => {
         payload: {},
         sequenceNumber: 2,
         name: 'test',
+      },
+    ]);
+  });
+
+  it('保存したsnapshotを取得できること', async () => {
+    await eventStore.persistWithSnapshot(
+      {
+        aggregateId: '1',
+        payload: {},
+        sequenceNumber: 1,
+        name: 'test',
+      },
+      { foo: 'bar' },
+    );
+
+    const { snapshot } = await eventStore.retrieveWithSnapshot('1');
+    expect(snapshot).toEqual({ foo: 'bar' });
+  });
+
+  it('snapshotより後のイベントのみ取得されること', async () => {
+    await eventStore.persistWithSnapshot(
+      {
+        aggregateId: '1',
+        payload: {},
+        sequenceNumber: 1,
+        name: 'test',
+      },
+      { foo: 'bar' },
+    );
+    await eventStore.persist({
+      aggregateId: '1',
+      payload: {},
+      sequenceNumber: 2,
+      name: 'test2',
+    });
+
+    const { events, snapshot } = await eventStore.retrieveWithSnapshot('1');
+    expect(snapshot).toEqual({ foo: 'bar' });
+    expect(events).toEqual([
+      {
+        aggregateId: '1',
+        payload: {},
+        sequenceNumber: 2,
+        name: 'test2',
       },
     ]);
   });
